@@ -86,7 +86,7 @@ https://rladkwls1108.github.io/team-project/final.html
 ---
 
 ## 🧩 실행 방법
-1. `index.html`을 브라우저로 실행  
+1. `final.html`을 브라우저로 실행  
 2. 스페이스바로 시작  
 3. `P` → 일시정지 / `Space` → 재시작  
 
