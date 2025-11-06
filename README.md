@@ -7,6 +7,10 @@
 - UI 및 시각효과 개선  
 - 코드 구조 및 유지보수성 향상  
 
+**기존 게임**
+<img width="383" height="502" alt="image" src="https://github.com/user-attachments/assets/31dd3f5f-77d6-434f-b5d0-b43c7453928e" />
+
+**업데이트 후 **
 ---
 
 ## ⚙️ 기능 확장 기획
