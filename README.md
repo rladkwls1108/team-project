@@ -8,9 +8,12 @@
 - 코드 구조 및 유지보수성 향상  
 
 **기존 게임**
-<img width="383" height="502" alt="image" src="https://github.com/user-attachments/assets/31dd3f5f-77d6-434f-b5d0-b43c7453928e" />
+-<img width="383" height="502" alt="image" src="https://github.com/user-attachments/assets/31dd3f5f-77d6-434f-b5d0-b43c7453928e" />
 
 **업데이트 후 **
+
+-<img width="1280" height="694" alt="스크린샷 2025-11-07 020715" src="https://github.com/user-attachments/assets/8dbdd1d7-3db3-4a19-bfef-619ed8496d15" />
+
 ---
 
 ## ⚙️ 기능 확장 기획
