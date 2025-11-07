@@ -1,5 +1,5 @@
 # 🚀 Shooting Game – Function & UI Upgrade Project
-https://rladkwls1108.github.io/team-project/Function-Upgrade/index.html
+https://rladkwls1108.github.io/team-project/bug-fix/final.html
 ## 📘 프로젝트 개요 
 본 프로젝트는 기존 HTML5 캔버스 기반 슈팅 게임을 고도화하는 팀 프로젝트입니다.  
 **주요 목표:**  
