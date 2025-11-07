@@ -45,6 +45,177 @@ const CONFIG = {
   }
 };
 
+// ==================== Sound System (Web Audio API) ====================
+
+class SoundManager {
+  constructor() {
+    this.audioContext = null;
+    this.masterVolume = 0.3;
+    this.soundEnabled = true;
+    this.initAudioContext();
+  }
+
+  initAudioContext() {
+    try {
+      window.AudioContext = window.AudioContext || window.webkitAudioContext;
+      this.audioContext = new AudioContext();
+    } catch (e) {
+      console.warn('Web Audio API not supported');
+      this.soundEnabled = false;
+    }
+  }
+
+  playShootSound() {
+    if (!this.soundEnabled || !this.audioContext) return;
+    const now = this.audioContext.currentTime;
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(this.audioContext.destination);
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+    gain.gain.setValueAtTime(this.masterVolume * 0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+    osc.start(now);
+    osc.stop(now + 0.1);
+  }
+
+  playHitSound() {
+    if (!this.soundEnabled || !this.audioContext) return;
+    const now = this.audioContext.currentTime;
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(this.audioContext.destination);
+    osc.frequency.setValueAtTime(600, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.08);
+    gain.gain.setValueAtTime(this.masterVolume * 0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+    osc.start(now);
+    osc.stop(now + 0.08);
+  }
+
+  playExplosionSound() {
+    if (!this.soundEnabled || !this.audioContext) return;
+    const now = this.audioContext.currentTime;
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(this.audioContext.destination);
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+    gain.gain.setValueAtTime(this.masterVolume * 0.6, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  }
+
+  playItemSound() {
+    if (!this.soundEnabled || !this.audioContext) return;
+    const now = this.audioContext.currentTime;
+    const osc1 = this.audioContext.createOscillator();
+    const gain1 = this.audioContext.createGain();
+    osc1.connect(gain1);
+    gain1.connect(this.audioContext.destination);
+    osc1.frequency.setValueAtTime(1200, now);
+    gain1.gain.setValueAtTime(this.masterVolume * 0.4, now);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+    osc1.start(now);
+    osc1.stop(now + 0.15);
+
+    const osc2 = this.audioContext.createOscillator();
+    const gain2 = this.audioContext.createGain();
+    osc2.connect(gain2);
+    gain2.connect(this.audioContext.destination);
+    osc2.frequency.setValueAtTime(1600, now + 0.08);
+    gain2.gain.setValueAtTime(0, now + 0.08);
+    gain2.gain.linearRampToValueAtTime(this.masterVolume * 0.4, now + 0.09);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+    osc2.start(now + 0.08);
+    osc2.stop(now + 0.2);
+  }
+
+  playBossAppearSound() {
+    if (!this.soundEnabled || !this.audioContext) return;
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        const now = this.audioContext.currentTime;
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(this.audioContext.destination);
+        osc.frequency.setValueAtTime(100 + i * 30, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+        gain.gain.setValueAtTime(this.masterVolume * 0.7, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      }, i * 150);
+    }
+  }
+
+  playDamageSound() {
+    if (!this.soundEnabled || !this.audioContext) return;
+    const now = this.audioContext.currentTime;
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(this.audioContext.destination);
+    osc.frequency.setValueAtTime(700, now);
+    osc.frequency.linearRampToValueAtTime(300, now + 0.15);
+    gain.gain.setValueAtTime(this.masterVolume * 0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }
+
+  playGameOverSound() {
+    if (!this.soundEnabled || !this.audioContext) return;
+    const now = this.audioContext.currentTime;
+    const frequencies = [400, 300, 200];
+    frequencies.forEach((freq, index) => {
+      const osc = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(this.audioContext.destination);
+      const startTime = now + index * 0.15;
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(this.masterVolume * 0.5, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+      osc.start(startTime);
+      osc.stop(startTime + 0.2);
+    });
+  }
+
+  playBossDefeatSound() {
+    if (!this.soundEnabled || !this.audioContext) return;
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        const now = this.audioContext.currentTime;
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(this.audioContext.destination);
+        osc.frequency.setValueAtTime(1200 + i * 150, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+        gain.gain.setValueAtTime(this.masterVolume * 0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      }, i * 100);
+    }
+  }
+
+  toggleSound() {
+    this.soundEnabled = !this.soundEnabled;
+    return this.soundEnabled;
+  }
+
+  setVolume(volume) {
+    this.masterVolume = Math.max(0, Math.min(1, volume));
+  }
+}
+
 // ==================== 유틸리티 함수 ====================
 
 function distance(x1, y1, x2, y2) {
@@ -211,7 +382,6 @@ class Player {
   }
 
   draw(ctx) {
-    // 🔴 기존 게임의 드래곤 + 캐릭터 디자인
     const bobbing = Math.sin(this.animFrame * 0.15) * 2;
     const baseY = this.y + bobbing;
 
@@ -219,7 +389,6 @@ class Player {
       ctx.globalAlpha = 0.5;
     }
 
-    // 드래곤 날개 (왼쪽)
     ctx.fillStyle = "#8B0000";
     ctx.beginPath();
     ctx.ellipse(this.x + 10, baseY + 15, 12, 20, Math.PI / 6, 0, Math.PI * 2);
@@ -230,7 +399,6 @@ class Player {
     ctx.ellipse(this.x + 10, baseY + 15, 6, 12, Math.PI / 6, 0, Math.PI * 2);
     ctx.fill();
 
-    // 드래곤 날개 (오른쪽)
     ctx.fillStyle = "#8B0000";
     ctx.beginPath();
     ctx.ellipse(this.x + 50, baseY + 15, 12, 20, -Math.PI / 6, 0, Math.PI * 2);
@@ -241,19 +409,16 @@ class Player {
     ctx.ellipse(this.x + 50, baseY + 15, 6, 12, -Math.PI / 6, 0, Math.PI * 2);
     ctx.fill();
 
-    // 드래곤 몸통
     ctx.fillStyle = "#DC143C";
     ctx.beginPath();
     ctx.ellipse(this.x + 30, baseY + 20, 18, 12, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 드래곤 머리
     ctx.fillStyle = "#B22222";
     ctx.beginPath();
     ctx.ellipse(this.x + 30, baseY + 5, 10, 8, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 드래곤 뿔
     ctx.fillStyle = "#FFD700";
     ctx.beginPath();
     ctx.moveTo(this.x + 23, baseY);
@@ -269,7 +434,6 @@ class Player {
     ctx.closePath();
     ctx.fill();
 
-    // 눈
     ctx.fillStyle = "#FFFF00";
     ctx.beginPath();
     ctx.arc(this.x + 25, baseY + 3, 2.5, 0, Math.PI * 2);
@@ -286,11 +450,9 @@ class Player {
     ctx.arc(this.x + 35, baseY + 3, 1, 0, Math.PI * 2);
     ctx.fill();
 
-    // 캐릭터 몸
     ctx.fillStyle = "#4169E1";
     ctx.fillRect(this.x + 24, baseY + 8, 12, 12);
 
-    // 캐릭터 얼굴
     ctx.fillStyle = "#FFE4C4";
     ctx.beginPath();
     ctx.arc(this.x + 30, baseY + 5, 5, 0, Math.PI * 2);
@@ -305,7 +467,6 @@ class Player {
     ctx.fillRect(this.x + 27, baseY + 5, 2, 2);
     ctx.fillRect(this.x + 31, baseY + 5, 2, 2);
 
-    // 비행 이펙트
     if (this.animFrame % 6 < 3) {
       ctx.fillStyle = "rgba(0, 200, 255, 0.8)";
       ctx.beginPath();
@@ -316,7 +477,6 @@ class Player {
       ctx.fill();
     }
 
-    // 쉴드 버프 표시
     if (this.buffs.shield.active) {
       ctx.strokeStyle = '#FFFF00';
       ctx.lineWidth = 3;
@@ -355,7 +515,6 @@ class Bullet {
 
   draw(ctx) {
     if (this.fromPlayer) {
-      // 기존 게임의 플레이어 총알 스타일
       const gradient = ctx.createRadialGradient(this.x + 3, this.y + 10, 0, this.x + 3, this.y + 10, 8);
       gradient.addColorStop(0, "#FFFFFF");
       gradient.addColorStop(0.5, "#00FFFF");
@@ -367,7 +526,6 @@ class Bullet {
       ctx.fillStyle = "rgba(0, 255, 255, 0.3)";
       ctx.fillRect(this.x + 1, this.y + 15, 4, 10);
     } else {
-      // 기존 게임의 적 총알 스타일
       const gradient = ctx.createRadialGradient(this.x + 4, this.y + 6, 0, this.x + 4, this.y + 6, 10);
       gradient.addColorStop(0, "#FF0000");
       gradient.addColorStop(0.5, "#8B0000");
@@ -438,9 +596,7 @@ class Enemy {
   }
 
   draw(ctx) {
-    // 🔴 기존 게임의 적 디자인 유지
     if (this.type.name === 'type1') {
-      // 녹색 적
       ctx.fillStyle = "#00FF88";
       ctx.beginPath();
       ctx.arc(this.x + 15, this.y + 15, 12, 0, Math.PI * 2);
@@ -475,7 +631,6 @@ class Enemy {
       ctx.fillRect(this.x + 17, this.y + 8, 2, 4);
 
     } else if (this.type.name === 'type2') {
-      // 보라색 적
       ctx.fillStyle = "#FF00FF";
       ctx.beginPath();
       ctx.arc(this.x + 15, this.y + 15, 13, 0, Math.PI * 2);
@@ -518,7 +673,6 @@ class Enemy {
       ctx.fill();
 
     } else {
-      // 금색 적 (type 3)
       ctx.fillStyle = "#FFD700";
       ctx.fillRect(this.x + 8, this.y + 15, 14, 10);
 
@@ -537,7 +691,6 @@ class Enemy {
       ctx.fillRect(this.x + 18, this.y + 8, 3, 2);
     }
 
-    // HP 바
     if (this.hp < this.maxHp) {
       ctx.fillStyle = "#8B0000";
       ctx.fillRect(this.x, this.y - 5, 30, 2);
@@ -664,7 +817,6 @@ class Boss extends Enemy {
   }
 
   draw(ctx) {
-    // 🔴 기존 게임의 보스 디자인
     const bossY = this.y + Math.sin(this.animFrame * 0.05) * 5;
 
     ctx.fillStyle = "#4B0082";
@@ -693,7 +845,6 @@ class Boss extends Enemy {
     ctx.arc(this.x + 52, bossY + 20, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // HP 바
     ctx.fillStyle = "#333";
     ctx.fillRect(this.x, bossY - 15, 80, 10);
 
@@ -705,7 +856,6 @@ class Boss extends Enemy {
     ctx.textAlign = "center";
     ctx.fillText(`BOSS: ${this.hp}/${this.maxHp}`, this.x + 40, bossY - 18);
 
-    // 보스 테두리
     if (this.animFrame % 20 < 10) {
       ctx.strokeStyle = "rgba(138, 43, 226, 0.5)";
       ctx.lineWidth = 3;
@@ -791,7 +941,9 @@ class GameManager {
   constructor() {
     this.canvas = document.getElementById('gameCanvas');
     this.ctx = this.canvas.getContext('2d');
-    this.state = 'start';
+    this.state = 'intro'; // 인트로 상태에서 시작
+    this.introTimer = 0;
+    
     this.score = 0;
     this.highScore = 0;
     this.stage = 1;
@@ -828,6 +980,8 @@ class GameManager {
     this.shakeIntensity = 0;
     this.animFrame = 0;
 
+    this.soundManager = new SoundManager(); // 사운드 매니저 초기화
+
     this.setupControls();
     this.gameLoop();
   }
@@ -850,7 +1004,9 @@ class GameManager {
 
       if (e.code === 'Space') {
         e.preventDefault();
-        if (this.state === 'start' || this.state === 'gameOver') {
+        if (this.state === 'intro') {
+          this.state = 'start';
+        } else if (this.state === 'start' || this.state === 'gameOver') {
           this.resetGame();
         }
       }
@@ -863,6 +1019,22 @@ class GameManager {
 
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
         this.useSkill();
+      }
+
+      // 음량 조절
+      if (e.code === 'Plus' || e.code === 'Equal') {
+        this.soundManager.setVolume(this.soundManager.masterVolume + 0.1);
+        console.log(`Volume: ${Math.round(this.soundManager.masterVolume * 100)}%`);
+      }
+      if (e.code === 'Minus') {
+        this.soundManager.setVolume(this.soundManager.masterVolume - 0.1);
+        console.log(`Volume: ${Math.round(this.soundManager.masterVolume * 100)}%`);
+      }
+
+      // 음소거
+      if (e.code === 'KeyM') {
+        const toggled = this.soundManager.toggleSound();
+        console.log(`Sound: ${toggled ? 'ON' : 'OFF'}`);
       }
     });
 
@@ -914,6 +1086,8 @@ class GameManager {
   spawnBoss() {
     if (this.boss) return;
     
+    this.soundManager.playBossAppearSound();
+    
     this.boss = new Boss(
       CONFIG.canvas.width / 2 - CONFIG.boss.width / 2, 
       -150, 
@@ -936,6 +1110,8 @@ class GameManager {
         const enemy = this.enemies[j];
         if (circleCollision(bullet, enemy)) {
           if (enemy.takeDamage(bullet.damage)) {
+            this.soundManager.playExplosionSound();
+            
             this.score += enemy.type.score * this.stage;
             this.skillGauge = Math.min(100, this.skillGauge + CONFIG.skill.chargePerKill);
             this.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.color);
@@ -945,6 +1121,8 @@ class GameManager {
             if (Math.random() < dropChance) {
               this.items.push(new Item(enemy.x, enemy.y));
             }
+          } else {
+            this.soundManager.playHitSound();
           }
           hit = true;
           break;
@@ -952,7 +1130,11 @@ class GameManager {
       }
 
       if (this.boss && circleCollision(bullet, this.boss)) {
+        this.soundManager.playHitSound();
+        
         if (this.boss.takeDamage(bullet.damage)) {
+          this.soundManager.playBossDefeatSound();
+          
           this.score += this.boss.type.score * this.stage;
           this.createExplosion(this.boss.x + this.boss.width/2, this.boss.y + this.boss.height/2, this.boss.color);
           this.screenShake = 30;
@@ -973,8 +1155,10 @@ class GameManager {
       const bullet = this.enemyBullets[i];
       if (circleCollision(bullet, this.player)) {
         if (this.player.takeDamage(bullet.damage)) {
+          this.soundManager.playGameOverSound();
           this.gameOver();
         } else {
+          this.soundManager.playDamageSound();
           this.createExplosion(this.player.x + this.player.width/2, this.player.y + this.player.height/2, '#FF6666');
         }
         this.enemyBullets.splice(i, 1);
@@ -985,8 +1169,10 @@ class GameManager {
       const enemy = this.enemies[i];
       if (circleCollision(this.player, enemy)) {
         if (this.player.takeDamage(20)) {
+          this.soundManager.playGameOverSound();
           this.gameOver();
         } else {
+          this.soundManager.playDamageSound();
           this.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.color);
         }
         this.enemies.splice(i, 1);
@@ -996,6 +1182,8 @@ class GameManager {
     for (let i = this.items.length - 1; i >= 0; i--) {
       const item = this.items[i];
       if (circleCollision(this.player, item)) {
+        this.soundManager.playItemSound();
+        
         this.player.applyItem(item, this.currentStage);
         this.createExplosion(item.x, item.y, item.color);
         this.items.splice(i, 1);
@@ -1004,6 +1192,7 @@ class GameManager {
 
     if (this.boss && circleCollision(this.player, this.boss)) {
       if (this.player.takeDamage(30)) {
+        this.soundManager.playGameOverSound();
         this.gameOver();
       }
     }
@@ -1032,6 +1221,8 @@ class GameManager {
     this.skillGauge = 0;
     this.lastSkillUse = currentTime;
 
+    this.soundManager.playExplosionSound();
+
     this.enemies.forEach(enemy => {
       this.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.color);
     });
@@ -1045,6 +1236,7 @@ class GameManager {
     if (this.boss) {
       this.boss.takeDamage(100);
       if (this.boss.hp <= 0) {
+        this.soundManager.playBossDefeatSound();
         this.score += this.boss.type.score * this.stage;
         this.createExplosion(this.boss.x + this.boss.width/2, this.boss.y + this.boss.height/2, this.boss.color);
         this.screenShake = 30;
@@ -1076,6 +1268,11 @@ class GameManager {
   }
 
   update() {
+    if (this.state === 'intro') {
+      this.introTimer++;
+      return;
+    }
+
     if (this.state !== 'playing') return;
 
     const currentTime = Date.now();
@@ -1090,7 +1287,10 @@ class GameManager {
 
     if (this.keys.Space) {
       const newBullets = this.player.shoot(currentTime);
-      this.bullets.push(...newBullets);
+      if (newBullets.length > 0) {
+        this.soundManager.playShootSound();
+        this.bullets.push(...newBullets);
+      }
     }
 
     this.spawnEnemies(currentTime);
@@ -1175,6 +1375,11 @@ class GameManager {
   }
 
   draw() {
+    if (this.state === 'intro') {
+      this.drawIntroScreen();
+      return;
+    }
+
     let shakeX = 0;
     let shakeY = 0;
     if (this.screenShake > 0) {
@@ -1185,7 +1390,6 @@ class GameManager {
     this.ctx.save();
     this.ctx.translate(shakeX, shakeY);
 
-    // 🔴 기존 게임의 배경 스타일
     this.ctx.fillStyle = "#000000";
     this.ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
 
@@ -1203,7 +1407,6 @@ class GameManager {
     this.ctx.fillStyle = nebula;
     this.ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
 
-    // 별 그리기
     this.stars.forEach(star => {
       this.ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
       this.ctx.beginPath();
@@ -1238,6 +1441,63 @@ class GameManager {
     } else if (this.state === 'gameOver') {
       this.drawGameOverScreen();
     }
+  }
+
+  drawIntroScreen() {
+    this.ctx.fillStyle = "#000000";
+    this.ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
+
+    this.stars.forEach(star => {
+      this.ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
+      this.ctx.beginPath();
+      this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+      this.ctx.fill();
+    });
+
+    const fadeInProgress = Math.min(1, this.introTimer / 120);
+    
+    this.ctx.save();
+    this.ctx.globalAlpha = fadeInProgress;
+    
+    const scale = 0.8 + fadeInProgress * 0.2;
+    this.ctx.save();
+    this.ctx.translate(CONFIG.canvas.width / 2, CONFIG.canvas.height / 3);
+    this.ctx.scale(scale, scale);
+    
+    this.ctx.fillStyle = '#00FFFF';
+    this.ctx.font = 'bold 64px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.shadowColor = '#00FFFF';
+    this.ctx.shadowBlur = 30;
+    this.ctx.fillText('SPACE DRAGON', 0, 0);
+    this.ctx.fillText('SHOOTER', 0, 80);
+    
+    this.ctx.restore();
+
+    this.ctx.globalAlpha = Math.max(0, fadeInProgress - 0.2);
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.font = '16px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.shadowBlur = 10;
+    this.ctx.fillText('우주 용사가 되어 적들을 무찌르세요!', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2);
+    this.ctx.fillText('1000m마다 강력한 보스와 만나 난이도가 상승합니다', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 30);
+
+    this.ctx.globalAlpha = Math.max(0, fadeInProgress - 0.4);
+    this.ctx.font = '14px Arial';
+    this.ctx.fillText('← → ↑ ↓: 이동', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 80);
+    this.ctx.fillText('Space: 발사', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 105);
+    this.ctx.fillText('Shift: 폭탄 스킬', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 130);
+    this.ctx.fillText('M: 음소거 / +/-: 음량', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 155);
+
+    this.ctx.globalAlpha = Math.max(0, fadeInProgress - 0.6);
+    this.ctx.fillStyle = '#FFD700';
+    this.ctx.font = 'bold 20px Arial';
+    
+    const blinkAlpha = Math.abs(Math.sin(this.introTimer * 0.05));
+    this.ctx.globalAlpha = (Math.max(0, fadeInProgress - 0.6)) * blinkAlpha;
+    this.ctx.fillText('Press SPACE to Start', CONFIG.canvas.width / 2, CONFIG.canvas.height - 40);
+
+    this.ctx.restore();
   }
 
   drawUI() {
@@ -1302,6 +1562,8 @@ class GameManager {
     this.ctx.fillText('Press SPACE to Start', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 20);
     this.ctx.font = '16px Arial';
     this.ctx.fillText('Arrow Keys: Move | Space: Shoot | Shift: Bomb Skill', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 60);
+    this.ctx.font = '12px Arial';
+    this.ctx.fillText('M: Mute | +/-: Volume', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 85);
     this.ctx.shadowBlur = 0;
   }
 
