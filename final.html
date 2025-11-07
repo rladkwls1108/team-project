@@ -3,12 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Space Dragon Shooter - Final</title>
+  <title>Space Dragon Shooter - Enhanced</title>
   <style>
-    body { background: #000; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    canvas { background: #000; border: 2px solid #00BFFF; box-shadow: 0 0 50px rgba(0,200,255,0.5); }
-    #hud { position: absolute; top:10px; left:10px; color:#00FFFF; font-size:18px; text-shadow:0 0 10px #00FFFF; font-weight:bold; }
-    #instructions { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); color:#FFF; font-size:14px; text-align:center; }
+    body { 
+      background: #000; 
+      margin: 0; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { 
+      background: #000; 
+      border: 2px solid #00BFFF; 
+      box-shadow: 0 0 50px rgba(0,200,255,0.5); 
+    }
+    #hud { 
+      position: absolute; 
+      top:10px; 
+      left:10px; 
+      color:#00FFFF; 
+      font-size:18px; 
+      text-shadow:0 0 10px #00FFFF; 
+      font-weight:bold; 
+    }
+    #instructions { 
+      position:absolute; 
+      bottom:20px; 
+      left:50%; 
+      transform:translateX(-50%); 
+      color:#FFF; 
+      font-size:14px; 
+      text-align:center; 
+    }
+    .buff-icon {
+      display: inline-block;
+      padding: 2px 6px;
+      margin: 2px;
+      border-radius: 3px;
+      color: #FFF;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    #soundToggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 191, 255, 0.3);
+      border: 2px solid #00BFFF;
+      color: #00FFFF;
+      padding: 8px 15px;
+      cursor: pointer;
+      font-weight: bold;
+      border-radius: 5px;
+      text-shadow: 0 0 10px #00FFFF;
+    }
+    #soundToggle:hover {
+      background: rgba(0, 191, 255, 0.5);
+    }
   </style>
 </head>
 <body>
@@ -22,9 +75,227 @@
       <div id="buffs"></div>
     </div>
     <div id="instructions">Arrows: Move | SPACE: Shoot/Start | P: Pause | SHIFT: Bomb Skill</div>
+    <button id="soundToggle">🔊 Sound ON</button>
   </div>
 
   <script>
+// ==================== 사운드 시스템 ====================
+
+class SoundManager {
+  constructor() {
+    this.audioContext = null;
+    this.enabled = true;
+    this.masterVolume = 0.3;
+    this.initAudioContext();
+  }
+
+  initAudioContext() {
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      console.log('Web Audio API not supported');
+      this.enabled = false;
+    }
+  }
+
+  resume() {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
+    }
+  }
+
+  toggle() {
+    this.enabled = !this.enabled;
+    return this.enabled;
+  }
+
+  playShoot() {
+    if (!this.enabled || !this.audioContext) return;
+    
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(200, this.audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(this.masterVolume * 0.3, this.audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+    
+    oscillator.start(this.audioContext.currentTime);
+    oscillator.stop(this.audioContext.currentTime + 0.1);
+  }
+
+  playEnemyShoot() {
+    if (!this.enabled || !this.audioContext) return;
+    
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(100, this.audioContext.currentTime + 0.15);
+    
+    gainNode.gain.setValueAtTime(this.masterVolume * 0.2, this.audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+    
+    oscillator.start(this.audioContext.currentTime);
+    oscillator.stop(this.audioContext.currentTime + 0.15);
+  }
+
+  playExplosion() {
+    if (!this.enabled || !this.audioContext) return;
+    
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    const filter = this.audioContext.createBiquadFilter();
+    
+    oscillator.type = 'sawtooth';
+    filter.type = 'lowpass';
+    
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(20, this.audioContext.currentTime + 0.3);
+    
+    filter.frequency.setValueAtTime(2000, this.audioContext.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(100, this.audioContext.currentTime + 0.3);
+    
+    gainNode.gain.setValueAtTime(this.masterVolume * 0.5, this.audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+    
+    oscillator.start(this.audioContext.currentTime);
+    oscillator.stop(this.audioContext.currentTime + 0.3);
+  }
+
+  playBossExplosion() {
+    if (!this.enabled || !this.audioContext) return;
+    
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        const filter = this.audioContext.createBiquadFilter();
+        
+        oscillator.type = 'sawtooth';
+        filter.type = 'lowpass';
+        
+        oscillator.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(300 - i * 50, this.audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(20, this.audioContext.currentTime + 0.5);
+        
+        filter.frequency.setValueAtTime(3000, this.audioContext.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(100, this.audioContext.currentTime + 0.5);
+        
+        gainNode.gain.setValueAtTime(this.masterVolume * 0.6, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+        
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.5);
+      }, i * 100);
+    }
+  }
+
+  playPowerUp() {
+    if (!this.enabled || !this.audioContext) return;
+    
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1200, this.audioContext.currentTime + 0.2);
+    
+    gainNode.gain.setValueAtTime(this.masterVolume * 0.4, this.audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+    
+    oscillator.start(this.audioContext.currentTime);
+    oscillator.stop(this.audioContext.currentTime + 0.2);
+  }
+
+  playBombSkill() {
+    if (!this.enabled || !this.audioContext) return;
+    
+    const oscillator1 = this.audioContext.createOscillator();
+    const oscillator2 = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    
+    oscillator1.type = 'sawtooth';
+    oscillator2.type = 'square';
+    
+    oscillator1.connect(gainNode);
+    oscillator2.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+    
+    oscillator1.frequency.setValueAtTime(500, this.audioContext.currentTime);
+    oscillator1.frequency.exponentialRampToValueAtTime(50, this.audioContext.currentTime + 0.5);
+    
+    oscillator2.frequency.setValueAtTime(250, this.audioContext.currentTime);
+    oscillator2.frequency.exponentialRampToValueAtTime(25, this.audioContext.currentTime + 0.5);
+    
+    gainNode.gain.setValueAtTime(this.masterVolume * 0.7, this.audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+    
+    oscillator1.start(this.audioContext.currentTime);
+    oscillator2.start(this.audioContext.currentTime);
+    oscillator1.stop(this.audioContext.currentTime + 0.5);
+    oscillator2.stop(this.audioContext.currentTime + 0.5);
+  }
+
+  playHit() {
+    if (!this.enabled || !this.audioContext) return;
+    
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    
+    oscillator.type = 'square';
+    oscillator.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(150, this.audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(50, this.audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(this.masterVolume * 0.3, this.audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+    
+    oscillator.start(this.audioContext.currentTime);
+    oscillator.stop(this.audioContext.currentTime + 0.1);
+  }
+
+  playBossWarning() {
+    if (!this.enabled || !this.audioContext) return;
+    
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime);
+        
+        gainNode.gain.setValueAtTime(this.masterVolume * 0.4, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+        
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.2);
+      }, i * 250);
+    }
+  }
+}
+
 // ==================== 게임 설정 ====================
 
 const CONFIG = {
@@ -238,7 +509,6 @@ class Player {
   }
 
   draw(ctx) {
-    // 🔴 기존 게임의 드래곤 + 캐릭터 디자인
     const bobbing = Math.sin(this.animFrame * 0.15) * 2;
     const baseY = this.y + bobbing;
 
@@ -382,7 +652,6 @@ class Bullet {
 
   draw(ctx) {
     if (this.fromPlayer) {
-      // 기존 게임의 플레이어 총알 스타일
       const gradient = ctx.createRadialGradient(this.x + 3, this.y + 10, 0, this.x + 3, this.y + 10, 8);
       gradient.addColorStop(0, "#FFFFFF");
       gradient.addColorStop(0.5, "#00FFFF");
@@ -394,7 +663,6 @@ class Bullet {
       ctx.fillStyle = "rgba(0, 255, 255, 0.3)";
       ctx.fillRect(this.x + 1, this.y + 15, 4, 10);
     } else {
-      // 기존 게임의 적 총알 스타일
       const gradient = ctx.createRadialGradient(this.x + 4, this.y + 6, 0, this.x + 4, this.y + 6, 10);
       gradient.addColorStop(0, "#FF0000");
       gradient.addColorStop(0.5, "#8B0000");
@@ -465,9 +733,7 @@ class Enemy {
   }
 
   draw(ctx) {
-    // 🔴 기존 게임의 적 디자인 유지
     if (this.type.name === 'type1') {
-      // 녹색 적
       ctx.fillStyle = "#00FF88";
       ctx.beginPath();
       ctx.arc(this.x + 15, this.y + 15, 12, 0, Math.PI * 2);
@@ -502,7 +768,6 @@ class Enemy {
       ctx.fillRect(this.x + 17, this.y + 8, 2, 4);
 
     } else if (this.type.name === 'type2') {
-      // 보라색 적
       ctx.fillStyle = "#FF00FF";
       ctx.beginPath();
       ctx.arc(this.x + 15, this.y + 15, 13, 0, Math.PI * 2);
@@ -545,7 +810,6 @@ class Enemy {
       ctx.fill();
 
     } else {
-      // 금색 적 (type 3)
       ctx.fillStyle = "#FFD700";
       ctx.fillRect(this.x + 8, this.y + 15, 14, 10);
 
@@ -564,7 +828,6 @@ class Enemy {
       ctx.fillRect(this.x + 18, this.y + 8, 3, 2);
     }
 
-    // HP 바
     if (this.hp < this.maxHp) {
       ctx.fillStyle = "#8B0000";
       ctx.fillRect(this.x, this.y - 5, 30, 2);
@@ -691,7 +954,6 @@ class Boss extends Enemy {
   }
 
   draw(ctx) {
-    // 🔴 기존 게임의 보스 디자인
     const bossY = this.y + Math.sin(this.animFrame * 0.05) * 5;
 
     ctx.fillStyle = "#4B0082";
@@ -720,7 +982,6 @@ class Boss extends Enemy {
     ctx.arc(this.x + 52, bossY + 20, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // HP 바
     ctx.fillStyle = "#333";
     ctx.fillRect(this.x, bossY - 15, 80, 10);
 
@@ -732,7 +993,6 @@ class Boss extends Enemy {
     ctx.textAlign = "center";
     ctx.fillText(`BOSS: ${this.hp}/${this.maxHp}`, this.x + 40, bossY - 18);
 
-    // 보스 테두리
     if (this.animFrame % 20 < 10) {
       ctx.strokeStyle = "rgba(138, 43, 226, 0.5)";
       ctx.lineWidth = 3;
@@ -818,7 +1078,8 @@ class GameManager {
   constructor() {
     this.canvas = document.getElementById('gameCanvas');
     this.ctx = this.canvas.getContext('2d');
-    this.state = 'start';
+    this.state = 'intro';
+    this.introFrame = 0;
     this.score = 0;
     this.highScore = 0;
     this.stage = 1;
@@ -831,6 +1092,7 @@ class GameManager {
     this.bossActive = false;
     this.bossWarning = false;
     this.bossWarningTimer = 0;
+    this.bossWarningPlayed = false;
 
     this.player = new Player(CONFIG.canvas.width / 2 - 20, CONFIG.canvas.height - 80);
     this.enemies = [];
@@ -855,6 +1117,8 @@ class GameManager {
     this.shakeIntensity = 0;
     this.animFrame = 0;
 
+    this.soundManager = new SoundManager();
+
     this.setupControls();
     this.gameLoop();
   }
@@ -877,7 +1141,11 @@ class GameManager {
 
       if (e.code === 'Space') {
         e.preventDefault();
-        if (this.state === 'start' || this.state === 'gameOver') {
+        this.soundManager.resume();
+        
+        if (this.state === 'intro') {
+          this.state = 'start';
+        } else if (this.state === 'start' || this.state === 'gameOver') {
           this.resetGame();
         }
       }
@@ -895,6 +1163,12 @@ class GameManager {
 
     window.addEventListener('keyup', (e) => {
       this.keys[e.code] = false;
+    });
+
+    // 사운드 토글 버튼
+    document.getElementById('soundToggle').addEventListener('click', () => {
+      const enabled = this.soundManager.toggle();
+      document.getElementById('soundToggle').textContent = enabled ? '🔊 Sound ON' : '🔇 Sound OFF';
     });
   }
 
@@ -919,6 +1193,7 @@ class GameManager {
     this.skillCooldown = 0;
     this.bossWarning = false;
     this.bossWarningTimer = 0;
+    this.bossWarningPlayed = false;
     this.bossActive = false;
   }
 
@@ -966,12 +1241,15 @@ class GameManager {
             this.score += enemy.type.score * this.stage;
             this.skillGauge = Math.min(100, this.skillGauge + CONFIG.skill.chargePerKill);
             this.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.color);
+            this.soundManager.playExplosion();
             this.enemies.splice(j, 1);
 
             const dropChance = 0.15 + (this.currentStage - 1) * 0.02;
             if (Math.random() < dropChance) {
               this.items.push(new Item(enemy.x, enemy.y));
             }
+          } else {
+            this.soundManager.playHit();
           }
           hit = true;
           break;
@@ -982,11 +1260,14 @@ class GameManager {
         if (this.boss.takeDamage(bullet.damage)) {
           this.score += this.boss.type.score * this.stage;
           this.createExplosion(this.boss.x + this.boss.width/2, this.boss.y + this.boss.height/2, this.boss.color);
+          this.soundManager.playBossExplosion();
           this.screenShake = 30;
           this.shakeIntensity = 10;
           this.boss = null;
           this.bossActive = false;
           this.nextStage();
+        } else {
+          this.soundManager.playHit();
         }
         hit = true;
       }
@@ -1003,6 +1284,7 @@ class GameManager {
           this.gameOver();
         } else {
           this.createExplosion(this.player.x + this.player.width/2, this.player.y + this.player.height/2, '#FF6666');
+          this.soundManager.playHit();
         }
         this.enemyBullets.splice(i, 1);
       }
@@ -1015,6 +1297,7 @@ class GameManager {
           this.gameOver();
         } else {
           this.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.color);
+          this.soundManager.playHit();
         }
         this.enemies.splice(i, 1);
       }
@@ -1025,6 +1308,7 @@ class GameManager {
       if (circleCollision(this.player, item)) {
         this.player.applyItem(item, this.currentStage);
         this.createExplosion(item.x, item.y, item.color);
+        this.soundManager.playPowerUp();
         this.items.splice(i, 1);
       }
     }
@@ -1058,6 +1342,7 @@ class GameManager {
 
     this.skillGauge = 0;
     this.lastSkillUse = currentTime;
+    this.soundManager.playBombSkill();
 
     this.enemies.forEach(enemy => {
       this.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.color);
@@ -1103,6 +1388,18 @@ class GameManager {
   }
 
   update() {
+    if (this.state === 'intro') {
+      this.introFrame++;
+      this.stars.forEach(star => {
+        star.y += star.speed * 2;
+        if (star.y > CONFIG.canvas.height) {
+          star.y = 0;
+          star.x = Math.random() * CONFIG.canvas.width;
+        }
+      });
+      return;
+    }
+
     if (this.state !== 'playing') return;
 
     const currentTime = Date.now();
@@ -1117,6 +1414,9 @@ class GameManager {
 
     if (this.keys.Space) {
       const newBullets = this.player.shoot(currentTime);
+      if (newBullets.length > 0) {
+        this.soundManager.playShoot();
+      }
       this.bullets.push(...newBullets);
     }
 
@@ -1132,6 +1432,12 @@ class GameManager {
 
       this.bossWarning = true;
       this.bossWarningTimer = currentTime + 2000;
+      this.bossWarningPlayed = false;
+    }
+
+    if (this.bossWarning && !this.bossWarningPlayed) {
+      this.soundManager.playBossWarning();
+      this.bossWarningPlayed = true;
     }
 
     if (this.bossWarning && currentTime > this.bossWarningTimer) {
@@ -1142,12 +1448,10 @@ class GameManager {
       star.brightness += (Math.random() - 0.5) * 0.1;
       star.brightness = Math.max(0.3, Math.min(1, star.brightness));
 
-      if (!this.state === 'gameOver') {
-        star.y += star.speed;
-        if (star.y > CONFIG.canvas.height) {
-          star.y = 0;
-          star.x = Math.random() * CONFIG.canvas.width;
-        }
+      star.y += star.speed;
+      if (star.y > CONFIG.canvas.height) {
+        star.y = 0;
+        star.x = Math.random() * CONFIG.canvas.width;
       }
     });
 
@@ -1166,6 +1470,7 @@ class GameManager {
 
       const bullet = enemy.shoot(currentTime);
       if (bullet) {
+        this.soundManager.playEnemyShoot();
         this.enemyBullets.push(bullet);
       }
 
@@ -1175,6 +1480,9 @@ class GameManager {
     if (this.boss) {
       this.boss.update(this.player.x, this.player.y);
       const bossBullets = this.boss.shoot(currentTime, this.player.x + this.player.width/2, this.player.y + this.player.height/2);
+      if (bossBullets.length > 0) {
+        this.soundManager.playEnemyShoot();
+      }
       this.enemyBullets.push(...bossBullets);
     }
 
@@ -1212,7 +1520,7 @@ class GameManager {
     this.ctx.save();
     this.ctx.translate(shakeX, shakeY);
 
-    // 🔴 기존 게임의 배경 스타일
+    // 배경
     this.ctx.fillStyle = "#000000";
     this.ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
 
@@ -1230,13 +1538,19 @@ class GameManager {
     this.ctx.fillStyle = nebula;
     this.ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
 
-    // 별 그리기
+    // 별
     this.stars.forEach(star => {
       this.ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
       this.ctx.beginPath();
       this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
       this.ctx.fill();
     });
+
+    if (this.state === 'intro') {
+      this.drawIntroScreen();
+      this.ctx.restore();
+      return;
+    }
 
     this.particles.forEach(particle => particle.draw(this.ctx));
 
@@ -1265,6 +1579,80 @@ class GameManager {
     } else if (this.state === 'gameOver') {
       this.drawGameOverScreen();
     }
+  }
+
+  drawIntroScreen() {
+    const progress = Math.min(this.introFrame / 120, 1);
+    
+    // 타이틀 애니메이션
+    this.ctx.save();
+    this.ctx.globalAlpha = progress;
+    
+    // 메인 타이틀
+    this.ctx.fillStyle = '#00FFFF';
+    this.ctx.font = 'bold 64px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.shadowColor = '#00FFFF';
+    this.ctx.shadowBlur = 30;
+    
+    const titleY = CONFIG.canvas.height / 2 - 100 + (1 - progress) * 50;
+    this.ctx.fillText('SPACE DRAGON', CONFIG.canvas.width / 2, titleY);
+    
+    this.ctx.fillStyle = '#FFD700';
+    this.ctx.font = 'bold 48px Arial';
+    this.ctx.shadowColor = '#FFD700';
+    this.ctx.fillText('SHOOTER', CONFIG.canvas.width / 2, titleY + 60);
+    
+    // 드래곤 일러스트
+    if (this.introFrame > 60) {
+      const dragonAlpha = Math.min((this.introFrame - 60) / 60, 1);
+      this.ctx.globalAlpha = dragonAlpha;
+      
+      const dragonX = CONFIG.canvas.width / 2 - 30;
+      const dragonY = titleY + 120;
+      const bobbing = Math.sin(this.introFrame * 0.1) * 3;
+      
+      // 간단한 드래곤 실루엣
+      this.ctx.fillStyle = "#DC143C";
+      this.ctx.beginPath();
+      this.ctx.ellipse(dragonX + 30, dragonY + bobbing, 25, 18, 0, 0, Math.PI * 2);
+      this.ctx.fill();
+      
+      this.ctx.fillStyle = "#FFD700";
+      this.ctx.beginPath();
+      this.ctx.moveTo(dragonX + 15, dragonY - 5 + bobbing);
+      this.ctx.lineTo(dragonX + 10, dragonY - 15 + bobbing);
+      this.ctx.lineTo(dragonX + 20, dragonY + bobbing);
+      this.ctx.closePath();
+      this.ctx.fill();
+      
+      this.ctx.beginPath();
+      this.ctx.moveTo(dragonX + 45, dragonY - 5 + bobbing);
+      this.ctx.lineTo(dragonX + 50, dragonY - 15 + bobbing);
+      this.ctx.lineTo(dragonX + 40, dragonY + bobbing);
+      this.ctx.closePath();
+      this.ctx.fill();
+    }
+    
+    // 플래시 효과
+    if (this.introFrame > 100) {
+      const flashAlpha = Math.max(0, 1 - (this.introFrame - 100) / 20);
+      this.ctx.globalAlpha = flashAlpha * 0.3;
+      this.ctx.fillStyle = '#FFFFFF';
+      this.ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
+    }
+    
+    // "Press SPACE" 메시지
+    if (this.introFrame > 90 && Math.floor(this.introFrame / 30) % 2 === 0) {
+      this.ctx.globalAlpha = 1;
+      this.ctx.fillStyle = '#FFFFFF';
+      this.ctx.font = '24px Arial';
+      this.ctx.shadowColor = '#FFFFFF';
+      this.ctx.shadowBlur = 10;
+      this.ctx.fillText('Press SPACE to Continue', CONFIG.canvas.width / 2, CONFIG.canvas.height - 80);
+    }
+    
+    this.ctx.restore();
   }
 
   drawUI() {
